@@ -1,6 +1,6 @@
-import json
 import asyncio
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from app.models import RecommendRequest, RecommendResponse, FacilityScore
 from app.cache import TTLCache
 from app.config import settings
@@ -9,6 +9,14 @@ from app.facility_provider import FacilityProvider
 from app.scoring import predict_wait_seconds, explain
 
 app = FastAPI(title="Montreal Care Router")
+
+# Allow frontend (React) to call backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 cache = TTLCache(settings.cache_ttl_seconds)
 tts = ElevenLabsClient()
@@ -28,9 +36,7 @@ async def recommend(req: RecommendRequest):
     if cached and not req.include_tts:
         return cached
 
-    # ----------------------------
-    # 1) Find facilities (parallel)
-    # ----------------------------
+    # 1) Find facilities in parallel
     hospitals_task = facility_provider.nearby(
         req.lat, req.lng, req.radius_m, "hospital"
     )
@@ -43,16 +49,12 @@ async def recommend(req: RecommendRequest):
 
     hospitals, clinics = await asyncio.gather(hospitals_task, clinics_task)
 
-    # ----------------------------
-    # 2) Reduce how many we check
-    # ----------------------------
-    candidates = (hospitals + clinics)[:8]   # only top 8
+    # Limit candidates for speed
+    candidates = (hospitals + clinics)[:8]
     if not candidates:
         raise HTTPException(404, "No facilities found in radius")
 
-    # ----------------------------
-    # 3) Travel times
-    # ----------------------------
+    # 2) Travel times
     durations = await facility_provider.travel_times(
         req.lat, req.lng, candidates, req.mode
     )
@@ -60,9 +62,7 @@ async def recommend(req: RecommendRequest):
     if not isinstance(durations, list) or len(durations) != len(candidates):
         raise HTTPException(500, "Travel time result mismatch")
 
-    # ----------------------------
-    # 4) Score = travel + wait
-    # ----------------------------
+    # 3) Score = travel + wait
     scored: list[FacilityScore] = []
     for f, travel_s in zip(candidates, durations):
         travel_s = int(travel_s)

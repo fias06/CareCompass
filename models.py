@@ -1,29 +1,14 @@
-from pydantic import BaseModel, Field
-from typing import Literal
-
-
-Severity = Literal["low", "medium", "high"]
-TravelMode = Literal["driving", "transit", "walking"]
-
-
-class RecommendRequest(BaseModel):
-    lat: float
-    lng: float
-    severity: Severity = "medium"
-    mode: TravelMode = "driving"
-    radius_m: int = Field(default=6000, ge=500, le=25000)
-    include_tts: bool = False
+from typing import List, Optional
+from pydantic import BaseModel
 
 
 class Facility(BaseModel):
-    id: str
     name: str
     address: str
     lat: float
     lng: float
-    kind: Literal["hospital", "clinic"]
-    phone: str | None = None
-    website: str | None = None
+    kind: str  # "hospital" or "clinic"
+    phone: Optional[str] = None
 
 
 class FacilityScore(BaseModel):
@@ -34,8 +19,17 @@ class FacilityScore(BaseModel):
     explanation: str
 
 
+class RecommendRequest(BaseModel):
+    lat: float
+    lng: float
+    severity: str  # "low", "medium", "high"
+    mode: str      # "driving", "walking", "transit"
+    radius_m: int
+    include_tts: bool = False
+
+
 class RecommendResponse(BaseModel):
     recommended: FacilityScore
-    alternatives: list[FacilityScore]
+    alternatives: List[FacilityScore]
     spoken_text: str
-    tts_audio_base64: str | None = None
+    tts_audio_base64: Optional[str] = None

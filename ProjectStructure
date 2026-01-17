@@ -1,0 +1,12 @@
+backend/
+  app/
+    main.py
+    config.py
+    models.py
+    cache.py
+    gumloop_client.py
+    elevenlabs_client.py
+    facility_provider.py
+    scoring.py
+  requirements.txt
+  Dockerfile

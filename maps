@@ -1,0 +1,40 @@
+import json
+import os
+import requests
+from typing import Any, Dict, List
+
+class MapsClient:
+    BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+    def __init__(self, api_key: str="AIzaSyBJIKMOvqH66KIswDPZSl1zUcZSM0nA80U"):
+        self.api_key = api_key
+
+    def find_places(
+        self,
+        latitude: float,
+        longitude: float,
+        place_type: str,
+        radius: int = 25000,
+        max_results: int = 5
+    ) -> List[Dict[str, Any]]:
+        params = {
+            "key": self.api_key,
+            "location": f"{latitude},{longitude}",
+            "radius": radius,
+            "type": place_type
+        }
+        response = requests.get(self.BASE_URL, params=params)
+        response.raise_for_status()
+        results = response.json().get("results", [])
+        return results[:max_results]
+
+if __name__ == "__main__":
+    # McGill University coordinates
+    mcgill_lat = 45.5048
+    mcgill_lng = -73.5772
+    place_type = "hospital"
+
+    client = MapsClient()
+    places = client.find_places(mcgill_lat, mcgill_lng, place_type)
+    print(json.dumps(places, indent=2))
+    print("Places returned:", len(places))

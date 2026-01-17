@@ -1,4 +1,5 @@
 import json
+import asyncio
 from fastapi import FastAPI, HTTPException
 from app.models import RecommendRequest, RecommendResponse, FacilityScore
 from app.cache import TTLCache
@@ -27,17 +28,31 @@ async def recommend(req: RecommendRequest):
     if cached and not req.include_tts:
         return cached
 
-    # 1) Find facilities
-    hospitals = await facility_provider.nearby(req.lat, req.lng, req.radius_m, "hospital")
-    clinics = []
-    if req.severity == "low":
-        clinics = await facility_provider.nearby(req.lat, req.lng, req.radius_m, "clinic")
+    # ----------------------------
+    # 1) Find facilities (parallel)
+    # ----------------------------
+    hospitals_task = facility_provider.nearby(
+        req.lat, req.lng, req.radius_m, "hospital"
+    )
 
-    candidates = (hospitals + clinics)[: settings.max_candidates]
+    clinics_task = (
+        facility_provider.nearby(req.lat, req.lng, req.radius_m, "clinic")
+        if req.severity == "low"
+        else asyncio.sleep(0, result=[])
+    )
+
+    hospitals, clinics = await asyncio.gather(hospitals_task, clinics_task)
+
+    # ----------------------------
+    # 2) Reduce how many we check
+    # ----------------------------
+    candidates = (hospitals + clinics)[:8]   # only top 8
     if not candidates:
         raise HTTPException(404, "No facilities found in radius")
 
-    # 2) Travel times using Google Maps directly
+    # ----------------------------
+    # 3) Travel times
+    # ----------------------------
     durations = await facility_provider.travel_times(
         req.lat, req.lng, candidates, req.mode
     )
@@ -45,7 +60,9 @@ async def recommend(req: RecommendRequest):
     if not isinstance(durations, list) or len(durations) != len(candidates):
         raise HTTPException(500, "Travel time result mismatch")
 
-    # 3) Score = travel + wait
+    # ----------------------------
+    # 4) Score = travel + wait
+    # ----------------------------
     scored: list[FacilityScore] = []
     for f, travel_s in zip(candidates, durations):
         travel_s = int(travel_s)

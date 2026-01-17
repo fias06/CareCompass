@@ -1,12 +1,15 @@
 backend/
+  .env
+  README.md
+  requirements.txt
+  Dockerfile
   app/
+    __init__.py
     main.py
     config.py
     models.py
     cache.py
-    gumloop_client.py
-    elevenlabs_client.py
     facility_provider.py
+    chooseShortest.py
     scoring.py
-  requirements.txt
-  Dockerfile
+    elevenlabs_client.py

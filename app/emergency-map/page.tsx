@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { elevenLabsVoice } from '../lib/elevenlabs';
 import { GoogleMaps } from '../components/google-maps';
@@ -125,107 +125,29 @@ export default function EmergencyMap() {
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [filter, setFilter] = useState<'all' | 'emergency' | 'urgent_care' | 'clinic'>('all');
   const [speaking, setSpeaking] = useState(false);
-  const [mapsLoaded, setMapsLoaded] = useState(false);
-
-  // Load Google Maps Script
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (window.google?.maps) {
-      setMapsLoaded(true);
-      return;
-    }
-
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      console.warn('Google Maps API key not configured');
-      setMapsLoaded(true);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setMapsLoaded(true);
-    script.onerror = () => {
-      console.error('Failed to load Google Maps');
-      setMapsLoaded(true);
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, []);
-
-  // Initialize map with fallback
-  useEffect(() => {
-    if (!mapsLoaded) return;
-    
-    const mapContainer = document.getElementById('hospital-map');
-    if (!mapContainer) return;
-
-    const mcgillCoords = { lat: 45.5047, lng: -73.5771 };
-
-    // Check if Google Maps is available
-    if (typeof window !== 'undefined' && window.google?.maps) {
-      try {
-        const map = new window.google.maps.Map(mapContainer, {
-          zoom: 14,
-          center: mcgillCoords,
-          mapTypeId: 'roadmap',
-          styles: [
-            {
-              featureType: 'poi',
-              stylers: [{ visibility: 'off' }],
-            },
-          ],
-        });
-
-        // Add markers for all hospitals
-        HOSPITALS.forEach((hospital) => {
-          const marker = new window.google.maps.Marker({
-            position: { lat: hospital.lat, lng: hospital.lng },
-            map: map,
-            title: hospital.name,
-            icon: hospital.type === 'emergency' 
-              ? 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
-              : hospital.type === 'urgent_care'
-              ? 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png'
-              : 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
-          });
-
-          // Add click listener to marker
-          marker.addListener('click', () => {
-            setSelectedHospital(hospital);
-          });
-        });
-      } catch (error) {
-        console.error('Error initializing Google Map:', error);
-        renderFallbackMap(mapContainer);
-      }
-    } else {
-      // Fallback: render custom map visualization
-      renderFallbackMap(mapContainer);
-    }
-  }, []);
-
-  const renderFallbackMap = (container: HTMLElement) => {
-    container.innerHTML = `
-      <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center;">
-        <div style="font-size: 48px; margin-bottom: 20px;">📍</div>
-        <h3 style="margin: 0 0 10px 0; font-size: 24px; font-weight: bold;">Hospital Map</h3>
-        <p style="margin: 0; opacity: 0.9;">View the hospital list on the right to see details about nearby medical facilities</p>
-        <p style="margin: 10px 0 0 0; font-size: 12px; opacity: 0.7;">(Interactive Google Map requires a valid API key)</p>
-      </div>
-    `;
-  };
+  const hospitalListRef = useRef<HTMLDivElement>(null);
 
   const filteredHospitals = HOSPITALS.filter(
     (h) => filter === 'all' || h.type === filter
   ).sort((a, b) => a.distance - b.distance);
+
+  // Scroll selected hospital into view when clicked from list or map
+  useEffect(() => {
+    if (selectedHospital) {
+      const hospitalElement = document.getElementById(`hospital-${selectedHospital.id}`);
+      if (hospitalElement && hospitalListRef.current) {
+        hospitalElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedHospital]);
+
+  // Handle marker click from map - select hospital in list
+  const handleMarkerClick = (hospitalId: string) => {
+    const hospital = filteredHospitals.find((h) => h.id === hospitalId);
+    if (hospital) {
+      setSelectedHospital(hospital);
+    }
+  };
 
   const handleSpeak = async (text: string) => {
     setSpeaking(true);
@@ -250,7 +172,7 @@ export default function EmergencyMap() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">🗺️ Hospital Map</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Hospital Map</h1>
             </div>
             <p className="text-sm text-gray-600">Montreal Area</p>
           </div>
@@ -263,7 +185,29 @@ export default function EmergencyMap() {
           {/* Map */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden h-[600px] border border-gray-200">
-              <div id="hospital-map" className="w-full h-full" />
+              {/* Reuse GoogleMaps component - same as triage-results page */}
+              {!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+                // Fallback UI when API key is missing
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-8 text-center">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Hospital Map</h3>
+                  <p className="text-gray-600 mb-1">View the hospital list on the right to see details about nearby medical facilities.</p>
+                  <p className="text-sm text-gray-500 mt-2">(Interactive Google Map requires NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)</p>
+                </div>
+              ) : (
+                <GoogleMaps
+                  hospitals={filteredHospitals.map((h) => ({
+                    id: h.id,
+                    name: h.name,
+                    lat: h.lat,
+                    lng: h.lng,
+                    type: h.type,
+                    phone: h.phone,
+                    distance: h.distance,
+                    eta: h.eta,
+                  }))}
+                  onMarkerClick={handleMarkerClick}
+                />
+              )}
             </div>
 
             {/* Legend */}
@@ -297,10 +241,10 @@ export default function EmergencyMap() {
               <h3 className="text-lg font-bold text-gray-900 mb-4">Filter by Type</h3>
               <div className="space-y-2">
                 {[
-                  { key: 'all', label: '🏥 All Hospitals' },
-                  { key: 'emergency', label: '🚨 Emergency' },
-                  { key: 'urgent_care', label: '⚠️ Urgent Care' },
-                  { key: 'clinic', label: '💊 Clinics' },
+                  { key: 'all', label: 'All Hospitals' },
+                  { key: 'emergency', label: 'Emergency' },
+                  { key: 'urgent_care', label: 'Urgent Care' },
+                  { key: 'clinic', label: 'Clinics' },
                 ].map((option) => (
                   <button
                     key={option.key}
@@ -324,10 +268,11 @@ export default function EmergencyMap() {
                 <p className="text-sm text-gray-600 mt-1">{filteredHospitals.length} found</p>
               </div>
 
-              <div className="max-h-[600px] overflow-y-auto">
+              <div ref={hospitalListRef} className="max-h-[600px] overflow-y-auto">
                 {filteredHospitals.map((hospital) => (
                   <div
                     key={hospital.id}
+                    id={`hospital-${hospital.id}`}
                     onClick={() => setSelectedHospital(hospital)}
                     className={`p-4 border-b cursor-pointer transition-all ${
                       selectedHospital?.id === hospital.id
@@ -354,10 +299,8 @@ export default function EmergencyMap() {
                         <p>{hospital.distance} km • {hospital.eta} min</p>
                         <p>Wait: {hospital.waitTime} min</p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={i} className={i < Math.round(hospital.rating) ? '⭐' : '☆'} />
-                        ))}
+                      <div className="text-xs text-gray-600">
+                        {hospital.rating.toFixed(1)}
                       </div>
                     </div>
                   </div>
@@ -391,7 +334,7 @@ export default function EmergencyMap() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 font-semibold">RATING</p>
-                  <p className="text-3xl font-bold text-gray-900">{selectedHospital.rating}⭐</p>
+                  <p className="text-3xl font-bold text-gray-900">{selectedHospital.rating.toFixed(1)}</p>
                 </div>
               </div>
 
@@ -450,7 +393,7 @@ export default function EmergencyMap() {
                   <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                   <path d="M3 20h14a2 2 0 002-2V4a2 2 0 00-2-2H3a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                {speaking ? 'Speaking...' : '🔊 Hear Hospital Info'}
+                {speaking ? 'Speaking...' : 'Hear Hospital Info'}
               </button>
             </div>
           </div>

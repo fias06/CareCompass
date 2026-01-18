@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 
+// McGill University default location
+const MCGILL_LOCATION = { lat: 45.5047, lng: -73.5771 };
+
 interface GoogleMapsProps {
   hospitals: Array<{
     id: string;
@@ -14,6 +17,7 @@ interface GoogleMapsProps {
     eta: number;
   }>;
   onMarkerClick?: (hospitalId: string) => void;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 // Global flag to prevent multiple script loads
@@ -69,10 +73,11 @@ function loadGoogleMapsScript(callback: () => void) {
   document.head.appendChild(script);
 }
 
-export function GoogleMaps({ hospitals, onMarkerClick }: GoogleMapsProps) {
+export function GoogleMaps({ hospitals, onMarkerClick, userLocation }: GoogleMapsProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const userMarkerRef = useRef<google.maps.Marker | null>(null);
 
   useEffect(() => {
     loadGoogleMapsScript(() => {
@@ -82,8 +87,8 @@ export function GoogleMaps({ hospitals, onMarkerClick }: GoogleMapsProps) {
     function initializeMap() {
       if (!mapRef.current) return;
 
-      // Center on Montreal
-      const center = { lat: 45.5017, lng: -73.5673 };
+      // Use user location or default to McGill University
+      const center = userLocation || MCGILL_LOCATION;
 
       // Create map
       const map = new google.maps.Map(mapRef.current, {
@@ -147,9 +152,29 @@ export function GoogleMaps({ hospitals, onMarkerClick }: GoogleMapsProps) {
         markersRef.current.set(hospital.id, marker);
       });
 
-      // Fit bounds to all markers
+      // Add user location marker
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setMap(null);
+      }
+      userMarkerRef.current = new google.maps.Marker({
+        position: center,
+        map: map,
+        title: 'Your Location',
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: '#4285F4',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        },
+        zIndex: 1000,
+      });
+
+      // Fit bounds to all markers including user location
       if (hospitals.length > 0) {
         const bounds = new google.maps.LatLngBounds();
+        bounds.extend(center); // Include user location
         hospitals.forEach(hospital => {
           bounds.extend({ lat: hospital.lat, lng: hospital.lng });
         });
@@ -174,8 +199,12 @@ export function GoogleMaps({ hospitals, onMarkerClick }: GoogleMapsProps) {
       // Cleanup
       markersRef.current.forEach(marker => marker.setMap(null));
       markersRef.current.clear();
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setMap(null);
+        userMarkerRef.current = null;
+      }
     };
-  }, [hospitals, onMarkerClick]);
+  }, [hospitals, onMarkerClick, userLocation]);
 
   return (
     <div

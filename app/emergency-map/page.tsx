@@ -6,6 +6,9 @@ import { useTTS } from '../lib/hooks/useTTS';
 import type { SpeechPayload } from '../lib/voice/types';
 import { GoogleMaps } from '../components/google-maps';
 
+// McGill University default location
+const MCGILL_LOCATION = { lat: 45.5047, lng: -73.5771 };
+
 interface Hospital {
   id: string;
   name: string;
@@ -126,7 +129,29 @@ export default function EmergencyMap() {
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [filter, setFilter] = useState<'all' | 'emergency' | 'urgent_care' | 'clinic'>('all');
   const [speaking, setSpeaking] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const hospitalListRef = useRef<HTMLDivElement>(null);
+
+  // Get user location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {
+          // Default to McGill University if location denied
+          setUserLocation(MCGILL_LOCATION);
+        }
+      );
+    } else {
+      // Default to McGill University if geolocation not supported
+      setUserLocation(MCGILL_LOCATION);
+    }
+  }, []);
 
   const filteredHospitals = HOSPITALS.filter(
     (h) => filter === 'all' || h.type === filter
@@ -222,6 +247,7 @@ export default function EmergencyMap() {
                     eta: h.eta,
                   }))}
                   onMarkerClick={handleMarkerClick}
+                  userLocation={userLocation}
                 />
               )}
             </div>

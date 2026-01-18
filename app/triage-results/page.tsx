@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { GoogleMaps } from '../components/google-maps';
 import { SpeakButton } from '../components/SpeakButton';
 import type { SpeechPayload } from '../lib/voice/types';
 import { toUrgencyScore } from '../lib/utils/urgency';
+
+// McGill University default location
+const MCGILL_LOCATION = { lat: 45.5047, lng: -73.5771 };
 
 interface Hospital {
   id: string;
@@ -189,6 +192,28 @@ const getRecommendedHospitals = (score: number): Hospital[] => {
 
 function TriageResultsContent() {
   const searchParams = useSearchParams();
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Get user location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {
+          // Default to McGill University if location denied
+          setUserLocation(MCGILL_LOCATION);
+        }
+      );
+    } else {
+      // Default to McGill University if geolocation not supported
+      setUserLocation(MCGILL_LOCATION);
+    }
+  }, []);
   
   // TEMP LOG: Raw query param
   const scoreParam = searchParams.get('score');
@@ -318,6 +343,7 @@ function TriageResultsContent() {
                         const hospital = hospitals.find((h) => h.id === hospitalId);
                         if (hospital) setSelectedHospital(hospital);
                       }}
+                      userLocation={userLocation}
                     />
                   </div>
                 </div>

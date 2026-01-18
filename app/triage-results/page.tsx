@@ -183,7 +183,8 @@ const getRecommendedHospitals = (score: number): Hospital[] => {
     return h.type === 'emergency' || h.type === 'urgent_care';
   });
 
-  return filtered.sort((a, b) => a.distance - b.distance);
+  // Sort by total time (ETA + wait time) - lowest total time first
+  return filtered.sort((a, b) => (a.eta + a.waitTime) - (b.eta + b.waitTime));
 };
 
 function TriageResultsContent() {

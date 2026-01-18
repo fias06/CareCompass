@@ -130,7 +130,7 @@ export default function EmergencyMap() {
 
   const filteredHospitals = HOSPITALS.filter(
     (h) => filter === 'all' || h.type === filter
-  ).sort((a, b) => a.distance - b.distance);
+  ).sort((a, b) => (a.eta + a.waitTime) - (b.eta + b.waitTime));
 
   // Scroll selected hospital into view when clicked from list or map
   useEffect(() => {

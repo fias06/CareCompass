@@ -33,35 +33,45 @@ export default function Home() {
   const [symptomsText, setSymptomsText] = useState("");
 
   useEffect(() => {
+    // Reset everything when entering the page
+    setSelectedChips([]);
+    setSymptomsText("");
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const draft: TriageDraft = JSON.parse(stored);
-        setSelectedChips(Array.isArray(draft.selectedChips) ? draft.selectedChips : []);
-        setSymptomsText(typeof draft.symptomsText === "string" ? draft.symptomsText : "");
-      }
+      localStorage.removeItem(STORAGE_KEY);
     } catch {
       // ignore
     }
   }, []);
 
-  const toggleSymptom = (value: string) => {
-    setSelectedChips((prev) =>
-      prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
-    );
-  };
-
   const handleQuickSelect = (value: string) => {
-    toggleSymptom(value);
+    setSelectedChips((prev) => {
+      const isSelected = prev.includes(value);
+      
+      if (isSelected) {
+        // Unselecting
+        return prev.filter((s) => s !== value);
+      } else {
+        // Selecting
+        return [...prev, value];
+      }
+    });
 
-    // Append to textarea (nice comma-separated)
-    setSymptomsText((prev) => {
-      const trimmed = prev.trim();
-      const lower = trimmed.toLowerCase();
-      if (lower.includes(value.toLowerCase())) return prev;
-
-      if (!trimmed) return value;
-      return trimmed.endsWith(",") ? `${trimmed} ${value}` : `${trimmed}, ${value}`;
+    // Update text separately based on current state
+    setSymptomsText((prevText) => {
+      const isCurrentlySelected = selectedChips.includes(value);
+      
+      if (isCurrentlySelected) {
+        // Will be deselected, so remove from text
+        const regex = new RegExp(`\\b${value}\\b,?\\s*|,?\\s*\\b${value}\\b`, 'i');
+        let newText = prevText.replace(regex, '');
+        newText = newText.replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim();
+        return newText;
+      } else {
+        // Will be selected, so add to text
+        const trimmed = prevText.trim();
+        if (!trimmed) return value;
+        return trimmed.endsWith(",") ? `${trimmed} ${value}` : `${trimmed}, ${value}`;
+      }
     });
   };
 
@@ -94,6 +104,16 @@ export default function Home() {
 
   const isButtonDisabled =
     symptomsText.trim().length === 0 && selectedChips.length === 0;
+
+  const handleClear = () => {
+    setSymptomsText("");
+    setSelectedChips([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  };
 
   return (
     // HARD-FORCE light UI (no theme tokens)
@@ -187,14 +207,25 @@ export default function Home() {
             </div>
 
             {/* CTA */}
-            <button
-              type="button"
-              onClick={handleGetRecommendations}
-              disabled={isButtonDisabled}
-              className="px-10 py-3 rounded-full bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Get Recommendations
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleGetRecommendations}
+                disabled={isButtonDisabled}
+                className="px-10 py-3 rounded-full bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Get Recommendations
+              </button>
+              {(symptomsText.trim().length > 0 || selectedChips.length > 0) && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="px-10 py-3 rounded-full bg-gray-200 text-gray-900 font-medium hover:bg-gray-300 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
 
             {/* Disclaimer */}
             <p className="text-xs text-gray-500 text-center max-w-xl">

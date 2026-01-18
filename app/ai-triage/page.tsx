@@ -1,282 +1,213 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { MicButton } from "../components/MicButton";
+
+const STORAGE_KEY = "carecompass:triageDraft";
+
+type TriageDraft = {
+  selectedChips: string[];
+  symptomsText: string;
+  createdAt: string;
+};
 
 const QUICK_SYMPTOMS = [
-  { label: '🤒 Fever', value: 'fever' },
-  { label: '🤢 Nausea', value: 'nausea' },
-  { label: '🤕 Headache', value: 'headache' },
-  { label: '😷 Cough', value: 'cough' },
-  { label: '🫀 Chest Pain', value: 'chest pain' },
-  { label: '😵 Dizziness', value: 'dizziness' },
-  { label: '🤐 Sore Throat', value: 'sore throat' },
-  { label: '😴 Fatigue', value: 'fatigue' },
-  { label: '🫘 Stomach Ache', value: 'stomach ache' },
-  { label: '😤 Shortness of Breath', value: 'shortness of breath' },
-  { label: '🩹 Wound/Bleeding', value: 'bleeding' },
-  { label: '🧊 Fever High (>103°F)', value: 'high fever' },
+  { label: "Fever", value: "fever" },
+  { label: "Nausea", value: "nausea" },
+  { label: "Headache", value: "headache" },
+  { label: "Cough", value: "cough" },
+  { label: "Chest Pain", value: "chest pain" },
+  { label: "Dizziness", value: "dizziness" },
+  { label: "Sore Throat", value: "sore throat" },
+  { label: "Fatigue", value: "fatigue" },
+  { label: "Stomach Ache", value: "stomach ache" },
+  { label: "Shortness of Breath", value: "shortness of breath" },
+  { label: "Wound / Bleeding", value: "bleeding" },
+  { label: "High Fever (>103°F)", value: "high fever" },
 ];
 
-export default function AITriagePage() {
+export default function Home() {
   const router = useRouter();
-  const [score, setScore] = useState<number | null>(null);
-  const [messageReceived, setMessageReceived] = useState(false);
-  const [displayText, setDisplayText] = useState('');
-  const [userInput, setUserInput] = useState('');
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([
-    { role: 'assistant', content: 'Hello! I\'m CareCompass AI. Please describe your symptoms or how you\'re feeling, and I\'ll help assess your medical urgency. You can click the symptom buttons below for quick selection!' }
-  ]);
-  const [loading, setLoading] = useState(false);
+  const [selectedChips, setSelectedChips] = useState<string[]>([]);
+  const [symptomsText, setSymptomsText] = useState("");
 
-  const toggleSymptom = (symptom: string) => {
-    setSelectedSymptoms(prev => 
-      prev.includes(symptom) 
-        ? prev.filter(s => s !== symptom)
-        : [...prev, symptom]
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const draft: TriageDraft = JSON.parse(stored);
+        setSelectedChips(Array.isArray(draft.selectedChips) ? draft.selectedChips : []);
+        setSymptomsText(typeof draft.symptomsText === "string" ? draft.symptomsText : "");
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleSymptom = (value: string) => {
+    setSelectedChips((prev) =>
+      prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
     );
   };
 
-  const handleQuickSymptomSelect = (symptomValue: string) => {
-    toggleSymptom(symptomValue);
-    const newInput = userInput || '';
-    if (!userInput.includes(symptomValue)) {
-      setUserInput(newInput + (newInput ? ', ' : '') + symptomValue);
+  const handleQuickSelect = (value: string) => {
+    toggleSymptom(value);
+
+    // Append to textarea (nice comma-separated)
+    setSymptomsText((prev) => {
+      const trimmed = prev.trim();
+      const lower = trimmed.toLowerCase();
+      if (lower.includes(value.toLowerCase())) return prev;
+
+      if (!trimmed) return value;
+      return trimmed.endsWith(",") ? `${trimmed} ${value}` : `${trimmed}, ${value}`;
+    });
+  };
+
+  const handleGetRecommendations = () => {
+    const draft: TriageDraft = {
+      selectedChips,
+      symptomsText,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      // ignore
     }
+
+    router.push("/results");
   };
 
-  const handleSendMessage = async () => {
-    if (!userInput.trim() || loading) return;
-
-    // Add user message
-    const newMessages = [...messages, { role: 'user', content: userInput }];
-    setMessages(newMessages);
-    setUserInput('');
-    setLoading(true);
-
-    // Simulate AI response with symptom analysis
-    setTimeout(() => {
-      const symptoms = userInput.toLowerCase();
-      let score = 1;
-      let urgency = 'Low';
-      let response = '';
-
-      // Basic symptom scoring - Enhanced emergency detection
-      const emergencyKeywords = ['chest pain', 'heart attack', 'stroke', 'seizure', 'unconscious', 'bleeding heavily', 'trouble breathing', 'severe', 'stabbed', 'shot', 'bear', 'attacked', 'trauma', 'crushed', 'poisoned', 'overdose', 'choking', 'drowning', 'severe bleeding', 'broken bone', 'can\'t breathe', 'suicide', 'unresponsive'];
-      const urgentKeywords = ['severe pain', 'high fever', 'vomiting', 'dizziness', 'shortness of breath', 'broken', 'allergic reaction', 'difficulty breathing', 'fainting', 'heavy bleeding'];
-      const moderateKeywords = ['pain', 'fever', 'cough', 'headache', 'nausea', 'fatigue'];
-
-      if (emergencyKeywords.some(keyword => symptoms.includes(keyword))) {
-        score = 5;
-        urgency = 'Emergency';
-        response = 'Based on your symptoms, this appears to be an emergency situation. You should seek immediate medical attention at an Emergency Room. Calling 911 is recommended.';
-      } else if (urgentKeywords.some(keyword => symptoms.includes(keyword))) {
-        score = 4;
-        urgency = 'Requires Attention';
-        response = 'Your symptoms suggest you need prompt medical attention. An Urgent Care facility or ER visit is recommended.';
-      } else if (moderateKeywords.some(keyword => symptoms.includes(keyword))) {
-        score = 3;
-        urgency = 'Moderate';
-        response = 'Your symptoms suggest moderate concern. Moderate care would be appropriate, such as an urgent care center or clinic visit.';
-      } else {
-        score = 1;
-        urgency = 'Not Related';
-        response = 'The information you provided does not appear to be related to a medical concern. If you have health-related symptoms, please describe them specifically so I can provide proper guidance.';
+  const handleTranscript = (text: string) => {
+    setSymptomsText((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) {
+        return text;
       }
-
-      // Add AI response with score
-      setMessages(prev => [
-        ...prev,
-        { 
-          role: 'assistant', 
-          content: response 
-        }
-      ]);
-
-      setLoading(false);
-
-      // Auto-trigger redirect
-      setScore(score);
-      setMessageReceived(true);
-      setDisplayText(`Assessment Complete: ${urgency}`);
-
-      setTimeout(() => {
-        router.push(`/triage-results?score=${score}`);
-      }, 2000);
-    }, 800);
+      // Append with comma + space if textarea already has content
+      return trimmed + ", " + text;
+    });
   };
+
+  const isButtonDisabled =
+    symptomsText.trim().length === 0 && selectedChips.length === 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    // HARD-FORCE light UI (no theme tokens)
+    <div className="min-h-screen bg-white text-gray-900 relative">
+      {/* If you have any global overlay somewhere, this ensures our UI sits above it */}
+      <div className="relative z-10">
+        {/* Top-left brand header */}
+        <header className="absolute top-0 left-0 p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zm-11-1a1 1 0 11-2 0 1 1 0 012 0zM8 9a1 1 0 100-2 1 1 0 000 2zm5-1a1 1 0 11-2 0 1 1 0 012 0z" clipRule="evenodd" />
+            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+              <svg
+                className="w-5 h-5 text-gray-900"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">CareCompass AI Triage</h1>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left - Instructions */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-8 sticky top-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">How It Works</h2>
-              
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-blue-100">
-                    <span className="text-blue-600 font-bold">1</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Describe Symptoms</h3>
-                    <p className="text-sm text-gray-600 mt-1">Tell the AI chatbot about your symptoms in detail</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-purple-100">
-                    <span className="text-purple-600 font-bold">2</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">AI Analysis</h3>
-                    <p className="text-sm text-gray-600 mt-1">Advanced AI evaluates urgency (1-5 scale)</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-pink-100">
-                    <span className="text-pink-600 font-bold">3</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Smart Routing</h3>
-                    <p className="text-sm text-gray-600 mt-1">Find nearest hospital matching your urgency</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Severity Guide */}
-              <div className="mt-8 pt-8 border-t border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-4">Urgency Levels</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span className="text-gray-700"><strong>1-2:</strong> Mild</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <span className="text-gray-700"><strong>3:</strong> Moderate</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                    <span className="text-gray-700"><strong>4:</strong> Requires Attention</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <span className="text-gray-700"><strong>5:</strong> Urgent</span>
-                  </div>
-                </div>
-              </div>
+            <div>
+              <h1 className="text-xl font-semibold">CareCompass</h1>
+              <p className="text-sm text-gray-500">Smart Emergency Routing</p>
             </div>
           </div>
+        </header>
 
-          {/* Right - Chatbot */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col h-[750px]">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Chat with AI Assistant</h2>
-              
-              {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto mb-6 space-y-4 pr-4">
-                {messages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg text-sm leading-relaxed ${
-                      msg.role === 'user'
-                        ? 'bg-blue-500 text-white rounded-br-none font-medium'
-                        : msg.role === 'system'
-                        ? 'bg-green-100 text-green-900 font-bold rounded-bl-none'
-                        : 'bg-gray-100 text-black rounded-bl-none font-medium'
-                    }`}>
-                      {msg.content}
-                    </div>
-                  </div>
-                ))}
-                {loading && (
-                  <div className="flex justify-start">
-                    <div className="bg-gray-100 text-black px-4 py-3 rounded-lg rounded-bl-none font-medium">
-                      <div className="flex gap-2">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+        {/* Centered main content */}
+        <main className="flex flex-col items-center justify-center min-h-screen px-4 py-20">
+          <div className="w-full max-w-3xl flex flex-col items-center gap-8">
+            {/* Badge */}
+            <div className="flex justify-center">
+              <span className="px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-900 border border-gray-200">
+                AI-Powered Triage
+              </span>
+            </div>
 
-              {messageReceived && score && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg animate-pulse">
-                  <p className="text-green-800 font-semibold">
-                    ✓ Score: <strong>{score}/5</strong> - {displayText} Redirecting...
-                  </p>
-                </div>
-              )}
+            {/* Title + subtitle */}
+            <div className="text-center space-y-3">
+              <h2 className="text-4xl md:text-5xl font-semibold tracking-tight">
+                What symptoms are you experiencing?
+              </h2>
+              <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
+                Describe your symptoms and their severity. This helps us route you
+                to the most appropriate care facility.
+              </p>
+            </div>
 
-              {/* Quick Symptom Buttons */}
-              {!messageReceived && (
-                <div className="mb-6">
-                  <p className="text-sm font-semibold text-gray-900 mb-3">Quick Select Symptoms:</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {QUICK_SYMPTOMS.map((symptom) => (
-                      <button
-                        key={symptom.value}
-                        onClick={() => handleQuickSymptomSelect(symptom.value)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          selectedSymptoms.includes(symptom.value)
-                            ? 'bg-blue-600 text-white shadow-md scale-105'
-                            : 'bg-gray-200 text-black hover:bg-gray-300'
-                        }`}
-                      >
-                        {symptom.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+            {/* Chips (your symptoms, no emojis) */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {QUICK_SYMPTOMS.map((s) => {
+                const isSelected = selectedChips.includes(s.value);
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => handleQuickSelect(s.value)}
+                    className={[
+                      "px-4 py-2 rounded-full text-sm font-medium transition-all border",
+                      "select-none",
+                      isSelected
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-900 border-gray-300 hover:bg-gray-50",
+                    ].join(" ")}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
 
-              {/* Input Area */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Describe your symptoms..."
-                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-black placeholder-gray-500 font-medium text-sm"
-                  disabled={loading || messageReceived}
+            {/* Textarea */}
+            <div className="w-full max-w-2xl relative">
+              <textarea
+                value={symptomsText}
+                onChange={(e) => setSymptomsText(e.target.value)}
+                placeholder="I've had a sharp pain in my lower right abdomen for the past 6 hours..."
+                className="w-full min-h-[220px] px-4 py-4 pr-12 rounded-2xl border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 resize-none"
+              />
+              <div className="absolute bottom-4 right-4">
+                <MicButton
+                  onTranscript={handleTranscript}
+                  languageCode="eng"
                 />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!userInput.trim() || loading || messageReceived}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all shadow-md hover:shadow-lg"
-                >
-                  {loading ? 'Analyzing...' : 'Send'}
-                </button>
-              </div>
-
-              <div className="text-xs text-gray-600 text-center mt-3 font-medium">
-                Click symptoms above or type to describe your symptoms, then press Enter or click Send
               </div>
             </div>
+
+            {/* CTA */}
+            <button
+              type="button"
+              onClick={handleGetRecommendations}
+              disabled={isButtonDisabled}
+              className="px-10 py-3 rounded-full bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Get Recommendations
+            </button>
+
+            {/* Disclaimer */}
+            <p className="text-xs text-gray-500 text-center max-w-xl">
+              This tool provides guidance only and does not replace professional medical
+              advice. If you're experiencing a life-threatening emergency, call 911.
+            </p>
+
+            {/* Tiny debug so you can verify clicks are working */}
+            <p className="text-xs text-gray-400 text-center">
+              Selected: {selectedChips.length ? selectedChips.join(", ") : "none"}
+            </p>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );

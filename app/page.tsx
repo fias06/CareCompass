@@ -1,235 +1,248 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // Redirect to AI triage on page load
-    router.push("/ai-triage");
-  }, [router]);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <nav className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.5 1.5H5.75A2.25 2.25 0 003.5 3.75v12.5A2.25 2.25 0 005.75 18.5h8.5a2.25 2.25 0 002.25-2.25V6.5m-11-5v5m0 0h5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">CareCompass</h1>
+              <h1 className="text-xl font-semibold text-gray-900">CareCompass</h1>
             </div>
-            <p className="text-sm text-gray-600">AI-Powered Medical Triage</p>
+            <p className="text-sm text-gray-500">AI-Powered Medical Triage</p>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div>
-            <h2 className="text-5xl font-bold text-gray-900 mb-6">
-              Smart Medical <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Triage</span>
-            </h2>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Get instant AI-powered assessment of your symptoms and find the right healthcare facility near you in Montreal. Fast, accurate, and always safe.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/ai-triage"
-                className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold text-lg hover:shadow-lg hover:scale-105 transition-all"
-              >
-                <span className="text-2xl mr-3">🚑</span>
-                Start AI Triage
-              </Link>
-              <Link
-                href="/emergency-map"
-                className="inline-flex items-center justify-center px-8 py-4 bg-white border-2 border-purple-600 text-purple-600 rounded-xl font-bold text-lg hover:bg-purple-50 transition-all"
-              >
-                <span className="text-2xl mr-3">🗺️</span>
-                Browse Hospitals
-              </Link>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 mt-12">
-              <div>
-                <p className="text-3xl font-bold text-blue-600">9+</p>
-                <p className="text-gray-600 text-sm mt-1">Montreal Hospitals</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-purple-600">&lt;5s</p>
-                <p className="text-gray-600 text-sm mt-1">AI Assessment</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-pink-600">24/7</p>
-                <p className="text-gray-600 text-sm mt-1">Available</p>
-              </div>
-            </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center max-w-3xl mx-auto space-y-8">
+          {/* Badge */}
+          <div className="flex justify-center">
+            <span className="px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-900 border border-gray-200">
+              AI-Powered Triage
+            </span>
           </div>
 
-          {/* Right - Illustration */}
-          <div className="relative">
-            <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-3xl p-12 shadow-2xl">
-              <div className="space-y-6">
-                {/* Chat Example */}
-                <div className="bg-white rounded-2xl p-6 shadow-lg">
-                  <div className="flex gap-3 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">A</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">CareCompass AI</p>
-                      <p className="text-sm text-gray-600 mt-1">What symptoms are you experiencing?</p>
-                    </div>
-                  </div>
-                </div>
+          {/* Headline */}
+          <h2 className="text-4xl md:text-5xl font-semibold tracking-tight text-gray-900">
+            Smart Medical Triage
+          </h2>
 
-                {/* Score Badge */}
-                <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-2xl p-6 shadow-lg text-white">
-                  <p className="text-sm font-medium mb-2">Assessment Complete</p>
-                  <div className="flex items-end gap-2">
-                    <span className="text-5xl font-bold">4</span>
-                    <span className="text-lg font-semibold mb-1">/5</span>
-                  </div>
-                  <p className="text-sm mt-3 opacity-90">⚠️ Requires Attention Fast</p>
-                </div>
+          {/* Subhead */}
+          <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+            Get instant AI-powered assessment of your symptoms and find the right healthcare facility near you in Montreal. Fast, accurate, and always safe.
+          </p>
 
-                {/* Hospital Card */}
-                <div className="bg-white rounded-2xl p-6 shadow-lg">
-                  <p className="text-xs text-gray-500 font-semibold mb-2">RECOMMENDED</p>
-                  <p className="font-bold text-gray-900">Royal Victoria Hospital</p>
-                  <p className="text-sm text-gray-600 mt-2">0.6 km • 4 mins</p>
-                </div>
-              </div>
-            </div>
+          {/* Primary CTA */}
+          <div className="flex justify-center gap-4 pt-4">
+            <Link
+              href="/ai-triage"
+              className="inline-flex items-center justify-center px-8 py-3 bg-gray-900 text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
+            >
+              Start AI Triage
+            </Link>
+            <Link
+              href="/emergency-map"
+              className="inline-flex items-center justify-center px-8 py-3 bg-white text-gray-900 rounded-full font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              Browse Hospitals
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="bg-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">How It Works</h3>
+      {/* Role Selection Section */}
+      <div className="bg-gray-50 border-y border-gray-200 py-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h3 className="text-2xl font-semibold text-gray-900 text-center mb-10">Who are you?</h3>
+          
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Patient Card */}
+            <Link
+              href="/ai-triage"
+              className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
+                  <svg
+                    className="w-8 h-8 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold text-gray-900">I'm a Patient</h4>
+                <p className="text-sm text-gray-600">
+                  Get AI-powered symptom assessment and find the nearest appropriate care facility.
+                </p>
+              </div>
+            </Link>
+
+            {/* Hospital/Staff Card */}
+            <Link
+              href="/hospital"
+              className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                  <svg
+                    className="w-8 h-8 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold text-gray-900">I'm a Hospital / Staff</h4>
+                <p className="text-sm text-gray-600">
+                  Access hospital dashboard and staff tools for managing patient triage.
+                </p>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div className="py-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h3 className="text-2xl font-semibold text-gray-900 text-center mb-12">How It Works</h3>
           
           <div className="grid md:grid-cols-3 gap-8">
             {/* Step 1 */}
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white text-2xl font-bold mb-4">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 font-semibold text-lg">
                 1
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-3">Describe Symptoms</h4>
-              <p className="text-gray-600">Chat with our AI assistant and describe your symptoms in detail. It listens and learns.</p>
+              <h4 className="text-lg font-semibold text-gray-900">Describe Symptoms</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Chat with our AI assistant and describe your symptoms in detail. It listens and learns.
+              </p>
             </div>
 
             {/* Step 2 */}
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 text-white text-2xl font-bold mb-4">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 text-purple-600 font-semibold text-lg">
                 2
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-3">Get AI Score</h4>
-              <p className="text-gray-600">Advanced AI analyzes your case and assigns an urgency score from 1 to 5.</p>
+              <h4 className="text-lg font-semibold text-gray-900">Get AI Score</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Advanced AI analyzes your case and assigns an urgency score from 1 to 5.
+              </p>
             </div>
 
             {/* Step 3 */}
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-pink-600 text-white text-2xl font-bold mb-4">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-pink-100 text-pink-600 font-semibold text-lg">
                 3
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-3">Find Hospital</h4>
-              <p className="text-gray-600">Instantly get recommendations for the nearest suitable hospital based on your score.</p>
+              <h4 className="text-lg font-semibold text-gray-900">Find Hospital</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Instantly get recommendations for the nearest suitable hospital based on your score.
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Urgency Scale */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <h3 className="text-3xl font-bold text-gray-900 mb-12">Urgency Levels</h3>
-        
-        <div className="grid md:grid-cols-5 gap-4">
-          <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 text-center">
-            <div className="text-4xl font-bold text-green-600 mb-2">1-2</div>
-            <h4 className="font-bold text-gray-900 mb-2">Mild</h4>
-            <p className="text-sm text-gray-600">Clinic visit</p>
-          </div>
-
-          <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 text-center">
-            <div className="text-4xl font-bold text-yellow-600 mb-2">3</div>
-            <h4 className="font-bold text-gray-900 mb-2">Moderate</h4>
-            <p className="text-sm text-gray-600">Urgent Care</p>
-          </div>
-
-          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 text-center">
-            <div className="text-4xl font-bold text-orange-600 mb-2">4</div>
-            <h4 className="font-bold text-gray-900 mb-2">Attention</h4>
-            <p className="text-sm text-gray-600">Fast action needed</p>
-          </div>
-
-          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 text-center">
-            <div className="text-4xl font-bold text-red-600 mb-2">5</div>
-            <h4 className="font-bold text-gray-900 mb-2">Urgent</h4>
-            <p className="text-sm text-gray-600">Emergency services</p>
-          </div>
-
-          <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-6 text-center">
-            <div className="text-4xl font-bold text-gray-600 mb-2">?</div>
-            <h4 className="font-bold text-gray-900 mb-2">Unsure</h4>
-            <p className="text-sm text-gray-600">Talk to AI</p>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h3 className="text-4xl font-bold text-white mb-6">Ready to Get Help?</h3>
-          <p className="text-xl text-blue-100 mb-8">Start your AI-powered health assessment now. Quick, accurate, and safe.</p>
+      {/* How CareCompass Helps (In Practice) Section */}
+      <div className="bg-gray-50 border-y border-gray-200 py-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h3 className="text-2xl font-semibold text-gray-900 text-center mb-12">How CareCompass Helps</h3>
           
-          <Link
-            href="/ai-triage"
-            className="inline-flex items-center justify-center px-10 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg hover:shadow-lg hover:scale-105 transition-all"
-          >
-            <span className="text-2xl mr-3">🚑</span>
-            Begin Triage Now
-          </Link>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Faster Decisions Card */}
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative">
+              <span className="absolute top-4 right-4 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                Patients
+              </span>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Faster Decisions</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Reduce uncertainty during urgent moments.
+              </p>
+            </div>
+
+            {/* Smarter Routing Card */}
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative">
+              <span className="absolute top-4 right-4 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                Routing
+              </span>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Smarter Routing</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Match urgency with the right facility.
+              </p>
+            </div>
+
+            {/* Better Prepared Hospitals Card */}
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative">
+              <span className="absolute top-4 right-4 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                Hospitals
+              </span>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Better Prepared Hospitals</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Hospitals see what's coming before patients arrive.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-100 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+      <footer className="bg-white border-t border-gray-200 py-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
-              <h4 className="font-bold mb-4">CareCompass</h4>
-              <p className="text-sm text-gray-400">AI-powered medical triage for Montreal</p>
+              <h4 className="font-semibold mb-3 text-gray-900">CareCompass</h4>
+              <p className="text-sm text-gray-600">AI-powered medical triage for Montreal</p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link href="/ai-triage" className="hover:text-white">AI Triage</Link></li>
-                <li><Link href="/emergency-map" className="hover:text-white">Hospital Map</Link></li>
+              <h4 className="font-semibold mb-3 text-gray-900">Quick Links</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><Link href="/ai-triage" className="hover:text-gray-900">AI Triage</Link></li>
+                <li><Link href="/emergency-map" className="hover:text-gray-900">Hospital Map</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Coverage</h4>
-              <p className="text-sm text-gray-400">9 Montreal hospitals</p>
-              <p className="text-sm text-gray-400">24/7 Available</p>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Disclaimer</h4>
-              <p className="text-sm text-gray-400">For informational use only. Always consult medical professionals.</p>
+              <h4 className="font-semibold mb-3 text-gray-900">Disclaimer</h4>
+              <p className="text-sm text-gray-600">
+                For informational use only. Always consult medical professionals.
+              </p>
             </div>
           </div>
           
-          <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
+          <div className="border-t border-gray-200 pt-8 text-center text-sm text-gray-600">
             <p>&copy; 2026 CareCompass. All rights reserved.</p>
           </div>
         </div>

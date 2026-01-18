@@ -4,6 +4,9 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { GoogleMaps } from '../components/google-maps';
+import { SpeakButton } from '../components/SpeakButton';
+import type { SpeechPayload } from '../lib/voice/types';
+import { toUrgencyScore } from '../lib/utils/urgency';
 
 interface Hospital {
   id: string;
@@ -122,7 +125,11 @@ const HOSPITALS: Hospital[] = [
 ];
 
 const getSeverityInfo = (score: number) => {
-  if (score <= 2) {
+  // SAFEGUARD: Default to lowest severity (1/Mild) for invalid scores, never default to Urgent (5)
+  // This ensures parse failures or NaN don't display as maximum urgency
+  const validScore = Number.isFinite(score) && score >= 1 && score <= 5 ? score : 1;
+  
+  if (validScore <= 2) {
     return {
       label: 'Mild',
       color: 'green',
@@ -133,7 +140,7 @@ const getSeverityInfo = (score: number) => {
       description: 'Non-urgent care needed',
       recommendedType: 'clinic',
     };
-  } else if (score === 3) {
+  } else if (validScore === 3) {
     return {
       label: 'Moderate',
       color: 'yellow',
@@ -144,7 +151,7 @@ const getSeverityInfo = (score: number) => {
       description: 'Moderate care recommended',
       recommendedType: 'urgent_care',
     };
-  } else if (score === 4) {
+  } else if (validScore === 4) {
     return {
       label: 'Requires Attention',
       color: 'orange',
@@ -181,12 +188,26 @@ const getRecommendedHospitals = (score: number): Hospital[] => {
 
 function TriageResultsContent() {
   const searchParams = useSearchParams();
-  const score = searchParams.get('score') ? parseInt(searchParams.get('score')!, 10) : null;
-  const severity = getSeverityInfo(score || 0);
-  const hospitals = getRecommendedHospitals(score || 0);
+  
+  // TEMP LOG: Raw query param
+  const scoreParam = searchParams.get('score');
+  console.log("INPUT_URGENCY_RAW", scoreParam, typeof scoreParam);
+  
+  // SAFEGUARD: Use strict urgency helper - never default to 5, always defaults to 1
+  const score = toUrgencyScore(scoreParam, 1);
+  
+  // TEMP LOG: After validation
+  console.log("COMPUTED_URGENCY", score, typeof score);
+  
+  const severity = getSeverityInfo(score);
+  const hospitals = getRecommendedHospitals(score);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(hospitals[0] || null);
 
-  if (!score || score < 1 || score > 5) {
+  // TEMP LOG: Before rendering badge
+  console.log("BADGE_URGENCY", score, severity.label, typeof score);
+
+  // SAFEGUARD: Reject invalid scores (should never happen with toUrgencyScore, but double-check)
+  if (!Number.isFinite(score) || score < 1 || score > 5) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -208,19 +229,49 @@ function TriageResultsContent() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-100">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+          <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              {/* Heart icon - matches landing page for visual consistency */}
+              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                <svg
+                  className="w-5 h-5 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                   />
                 </svg>
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Triage Results</h1>
             </div>
+            {/* Centered SpeakButton - Enhanced for primary control visibility */}
+            {hospitals.length > 0 && hospitals[0] && (
+              <div className="absolute left-1/2 transform -translate-x-1/2">
+                <SpeakButton
+                  payload={{
+                    type: "recommendation_top",
+                    locale: "en",
+                    voice: "calm",
+                    data: {
+                      facilityName: hospitals[0].name,
+                      facilityType: hospitals[0].type,
+                      distanceKm: hospitals[0].distance,
+                      etaMin: hospitals[0].eta,
+                      waitMin: hospitals[0].waitTime,
+                      address: hospitals[0].address,
+                    },
+                  }}
+                  size="lg"
+                  label="Play audio summary of facility recommendation"
+                />
+              </div>
+            )}
             <Link href="/ai-triage" className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -252,6 +303,8 @@ function TriageResultsContent() {
                         : 'bg-green-100 text-green-700'
                     }`}
                   >
+                    {/* SAFEGUARD: Display computed severity label and validated score - never show invalid values as Urgent */}
+                    {/* TEMP LOG removed after debugging */}
                     {severity.label} • {score}/5
                   </span>
                 </div>
@@ -277,27 +330,53 @@ function TriageResultsContent() {
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Recommended Facilities</h3>
 
               <div className="flex-1 min-h-0 overflow-y-auto pr-6 space-y-4">
-                {hospitals.map((hospital) => (
-                  <div
-                    key={hospital.id}
-                    onClick={() => setSelectedHospital(hospital)}
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                      selectedHospital?.id === hospital.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="min-w-0">
-                        <h4 className="text-lg font-bold text-gray-900 break-words">{hospital.name}</h4>
-                        <p className="text-sm text-gray-600 mt-1 break-words">{hospital.address}</p>
+                {hospitals.map((hospital, index) => {
+                  // Build TTS payload for top recommended facility (first in list)
+                  const isTopFacility = index === 0;
+                  const ttsPayload: SpeechPayload | null = isTopFacility
+                    ? {
+                        type: "recommendation_top",
+                        locale: "en",
+                        voice: "calm",
+                        data: {
+                          facilityName: hospital.name,
+                          facilityType: hospital.type,
+                          distanceKm: hospital.distance,
+                          etaMin: hospital.eta,
+                          waitMin: hospital.waitTime,
+                          address: hospital.address,
+                        },
+                      }
+                    : null;
+
+                  return (
+                    <div
+                      key={hospital.id}
+                      onClick={() => setSelectedHospital(hospital)}
+                      className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                        selectedHospital?.id === hospital.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-lg font-bold text-gray-900 break-words">{hospital.name}</h4>
+                            {isTopFacility && ttsPayload && (
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <SpeakButton payload={ttsPayload} size="sm" />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1 break-words">{hospital.address}</p>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={i < Math.round(hospital.rating) ? '⭐' : '☆'} />
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={i} className={i < Math.round(hospital.rating) ? '⭐' : '☆'} />
-                        ))}
-                      </div>
-                    </div>
 
                     {/* FIX: force 2 columns on all widths so DISTANCE and ETA can never collide */}
                     <div className="grid grid-cols-2 gap-x-6 gap-y-4 mb-4">
@@ -339,8 +418,9 @@ function TriageResultsContent() {
                         </span>
                       )}
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

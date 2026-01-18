@@ -140,7 +140,7 @@ const getSeverityInfo = (score: number) => {
       borderColor: 'border-yellow-200',
       textColor: 'text-yellow-900',
       icon: '!',
-      description: 'Urgent care recommended',
+      description: 'Moderate care recommended',
       recommendedType: 'urgent_care',
     };
   } else if (score === 4) {

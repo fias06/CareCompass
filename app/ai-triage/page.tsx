@@ -78,7 +78,7 @@ export default function AITriagePage() {
       } else if (moderateKeywords.some(keyword => symptoms.includes(keyword))) {
         score = 3;
         urgency = 'Moderate';
-        response = 'Your symptoms suggest moderate concern. An urgent care visit would be appropriate.';
+        response = 'Your symptoms suggest moderate concern. Moderate care would be appropriate, such as an urgent care center or clinic visit.';
       } else {
         score = 2;
         urgency = 'Mild';

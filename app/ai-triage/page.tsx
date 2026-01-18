@@ -32,6 +32,7 @@ export default function Home() {
   const router = useRouter();
   const [selectedChips, setSelectedChips] = useState<string[]>([]);
   const [symptomsText, setSymptomsText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Reset everything when entering the page
@@ -76,20 +77,44 @@ export default function Home() {
     });
   };
 
-  const handleGetRecommendations = () => {
-    const draft: TriageDraft = {
-      selectedChips,
-      symptomsText,
-      createdAt: new Date().toISOString(),
-    };
-
+  const handleGetRecommendations = async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-    } catch {
-      // ignore
-    }
+      // Call Gemini API to analyze symptoms
+      const response = await fetch("/api/analyze-symptoms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symptoms: symptomsText }),
+      });
 
-    router.push("/results");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || "Failed to analyze symptoms");
+      }
+
+      const analysis = await response.json();
+      
+      const draft: TriageDraft = {
+        selectedChips,
+        symptomsText,
+        createdAt: new Date().toISOString(),
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+      } catch {
+        // ignore
+      }
+
+      // Redirect with the Gemini-analyzed score
+      router.push(`/results?score=${analysis.score}`);
+    } catch (error) {
+      console.error("Error:", error);
+      alert(`Error: ${error instanceof Error ? error.message : "Failed to analyze symptoms"}`);
+      setIsLoading(false);
+    }
   };
 
   const handleTranscript = (text: string) => {
@@ -117,9 +142,7 @@ export default function Home() {
   };
 
   return (
-    // HARD-FORCE light UI (no theme tokens)
     <div className="min-h-screen bg-white text-gray-900 relative">
-      {/* If you have any global overlay somewhere, this ensures our UI sits above it */}
       <div className="relative z-10">
         {/* Top-left brand header */}
         <header className="absolute top-0 left-0 p-6">
@@ -222,10 +245,10 @@ export default function Home() {
               <button
                 type="button"
                 onClick={handleGetRecommendations}
-                disabled={isButtonDisabled}
+                disabled={isButtonDisabled || isLoading}
                 className="px-10 py-3 rounded-full bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Get Recommendations
+                {isLoading ? "Analyzing..." : "Get Recommendations"}
               </button>
               {(symptomsText.trim().length > 0 || selectedChips.length > 0) && (
                 <button

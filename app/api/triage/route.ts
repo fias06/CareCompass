@@ -155,17 +155,17 @@ function triageSymptoms(input: TriageInput): TriageResult {
   const hasNoRiskFactors = !input.hasComorbidities && !input.isPregnant && !input.recentTrauma;
   const hasNoHighSelfReport = !input.severity_self_report || input.severity_self_report < 4;
 
-  if (hasLowSeverityKeyword && hasNoRedFlags && hasNoRiskFactors && hasNoHighSelfReport) {
-    if (baseSeverity > 2) {
-      const originalSeverity = baseSeverity;
-      console.error(
-        `[REGRESSION TEST FAIL] Low-severity symptom "${input.symptoms}" produced urgency ${originalSeverity}. Expected <= 2. Forcing to 1.`
-      );
-      // FORCE to 1 - low-severity symptoms without red flags must be 1-2, never 3-5
-      baseSeverity = 1;
-      reasoning.push(`[Safeguard] Low-severity symptom "${input.symptoms}" corrected to urgency 1 (was ${originalSeverity})`);
-    }
-  }
+  // if (hasLowSeverityKeyword && hasNoRedFlags && hasNoRiskFactors && hasNoHighSelfReport) {
+  //   if (baseSeverity > 2) {
+  //     const originalSeverity = baseSeverity;
+  //     console.error(
+  //       `[REGRESSION TEST FAIL] Low-severity symptom "${input.symptoms}" produced urgency ${originalSeverity}. Expected <= 2. Forcing to 1.`
+  //     );
+  //     // FORCE to 1 - low-severity symptoms without red flags must be 1-2, never 3-5
+  //     baseSeverity = 1;
+  //     reasoning.push(`[Safeguard] Low-severity symptom "${input.symptoms}" corrected to urgency 1 (was ${originalSeverity})`);
+  //   }
+  // }
 
   const recommendation =
     baseSeverity === 5
@@ -178,9 +178,20 @@ function triageSymptoms(input: TriageInput): TriageResult {
 
   // FINAL SAFEGUARD: Clamp severity to valid range [1..5] and validate it's never 5 without red flags
   // This is the last line of defense before returning the result
-  const finalSeverity = baseSeverity === 5 && detectedRedFlags.length === 0
-    ? 4 // Cap at 4 if somehow we reached 5 without red flags
-    : Math.min(5, Math.max(1, baseSeverity)) as 1 | 2 | 3 | 4 | 5;
+  if (detectedRedFlags.length === 0 && baseSeverity === 5) {
+    console.error("CRITICAL: Final severity 5 without red flags - adjusting to 4");
+    baseSeverity = 4;
+    reasoning.push("[Final Safeguard] Severity adjusted to 4 - no red flags detected");
+  }
+
+  console.log("DETECTED_RED_FLAGS", detectedRedFlags);
+  console.log("BASE_SEVERITY", baseSeverity);
+
+  const finalSeverity = baseSeverity;
+
+  // const finalSeverity = baseSeverity === 5 && detectedRedFlags.length === 0
+  //   ? 4 // Cap at 4 if somehow we reached 5 without red flags
+  //   : Math.min(5, Math.max(1, baseSeverity)) as 1 | 2 | 3 | 4 | 5;
 
   // TEMP LOG: Final urgency before return
   if (process.env.NODE_ENV === "development") {

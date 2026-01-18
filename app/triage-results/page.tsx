@@ -186,7 +186,9 @@ const getRecommendedHospitals = (score: number): Hospital[] => {
 function TriageResultsContent() {
   const searchParams = useSearchParams();
   const score = searchParams.get('score') ? parseInt(searchParams.get('score')!) : null;
-  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
+  const severity = getSeverityInfo(score || 0);
+  const hospitals = getRecommendedHospitals(score || 0);
+  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(hospitals[0] || null);
 
   if (!score || score < 1 || score > 5) {
     return (
@@ -204,9 +206,6 @@ function TriageResultsContent() {
       </div>
     );
   }
-
-  const severity = getSeverityInfo(score);
-  const hospitals = getRecommendedHospitals(score);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -257,87 +256,72 @@ function TriageResultsContent() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-4 gap-8">
+        {/* Top Section: Hospital List + Assessment Summary */}
+        <div className="grid lg:grid-cols-2 gap-8 mb-8">
           {/* Left - Hospital List */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Recommended Facilities</h3>
-              
-              <div className="space-y-4">
-                {hospitals.map((hospital) => (
-                  <div
-                    key={hospital.id}
-                    onClick={() => setSelectedHospital(hospital)}
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                      selectedHospital?.id === hospital.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h4 className="text-lg font-bold text-gray-900">{hospital.name}</h4>
-                        <p className="text-sm text-gray-600 mt-1">{hospital.address}</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={i} className={i < Math.round(hospital.rating) ? '⭐' : '☆'} />
-                        ))}
-                      </div>
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Recommended Facilities</h3>
+            
+            <div className="space-y-4">
+              {hospitals.map((hospital) => (
+                <div
+                  key={hospital.id}
+                  onClick={() => setSelectedHospital(hospital)}
+                  className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                    selectedHospital?.id === hospital.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-900">{hospital.name}</h4>
+                      <p className="text-sm text-gray-600 mt-1">{hospital.address}</p>
                     </div>
-
-                    <div className="grid grid-cols-4 gap-4 mb-4">
-                      <div>
-                        <p className="text-xs text-gray-600 font-semibold">DISTANCE</p>
-                        <p className="text-lg font-bold text-gray-900">{hospital.distance} km</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600 font-semibold">ETA</p>
-                        <p className="text-lg font-bold text-gray-900">{hospital.eta} min</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600 font-semibold">WAIT TIME</p>
-                        <p className="text-lg font-bold text-gray-900">{hospital.waitTime} min</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600 font-semibold">TYPE</p>
-                        <p className="text-lg font-bold text-gray-900 capitalize">{hospital.type.replace('_', ' ')}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {hospital.services.slice(0, 3).map((service) => (
-                        <span key={service} className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                          {service}
-                        </span>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className={i < Math.round(hospital.rating) ? '⭐' : '☆'} />
                       ))}
-                      {hospital.services.length > 3 && (
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
-                          +{hospital.services.length - 3} more
-                        </span>
-                      )}
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-gray-600 font-semibold">DISTANCE</p>
+                      <p className="text-lg font-bold text-gray-900">{hospital.distance} km</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-semibold">ETA</p>
+                      <p className="text-lg font-bold text-gray-900">{hospital.eta} min</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-semibold">WAIT TIME</p>
+                      <p className="text-lg font-bold text-gray-900">{hospital.waitTime} min</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-semibold">TYPE</p>
+                      <p className="text-lg font-bold text-gray-900 capitalize">{hospital.type.replace('_', ' ')}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {hospital.services.slice(0, 3).map((service) => (
+                      <span key={service} className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                        {service}
+                      </span>
+                    ))}
+                    {hospital.services.length > 3 && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
+                        +{hospital.services.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Center - Map */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-6 h-full" style={{ minHeight: '500px' }}>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Nearby Facilities</h3>
-              <GoogleMaps 
-                hospitals={hospitals}
-                onMarkerClick={(hospitalId) => {
-                  const hospital = hospitals.find(h => h.id === hospitalId);
-                  if (hospital) setSelectedHospital(hospital);
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Right - Details */}
+          {/* Right - Assessment Summary */}
           <div className="space-y-6">
             {/* Summary Card */}
             <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -407,6 +391,18 @@ function TriageResultsContent() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Map */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Nearby Facilities</h3>
+          <GoogleMaps 
+            hospitals={hospitals}
+            onMarkerClick={(hospitalId) => {
+              const hospital = hospitals.find(h => h.id === hospitalId);
+              if (hospital) setSelectedHospital(hospital);
+            }}
+          />
         </div>
       </div>
     </div>

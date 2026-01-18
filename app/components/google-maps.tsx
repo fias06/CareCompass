@@ -74,17 +74,18 @@ export function GoogleMaps({ hospitals, onMarkerClick }: GoogleMapsProps) {
           map: map,
           title: hospital.name,
           icon: icon,
+          scale: 1.5,
         });
 
         // Create info window content
         const infoWindow = new google.maps.InfoWindow({
           content: `
-            <div style="padding: 10px; font-family: Arial, sans-serif;">
-              <h3 style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold;">${hospital.name}</h3>
-              <p style="margin: 3px 0; font-size: 12px;">
+            <div style="padding: 10px; font-family: Arial, sans-serif; color: black;">
+              <h3 style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold; color: black;">${hospital.name}</h3>
+              <p style="margin: 3px 0; font-size: 12px; color: black;">
                 <strong>Distance:</strong> ${hospital.distance} km<br/>
                 <strong>ETA:</strong> ${hospital.eta} min<br/>
-                <strong>Phone:</strong> <a href="tel:${hospital.phone}">${hospital.phone}</a>
+                <strong>Phone:</strong> <a href="tel:${hospital.phone}" style="color: #0066cc;">${hospital.phone}</a>
               </p>
             </div>
           `,
@@ -92,7 +93,7 @@ export function GoogleMaps({ hospitals, onMarkerClick }: GoogleMapsProps) {
 
         marker.addListener('click', () => {
           // Close all other info windows
-          document.querySelectorAll('.gm-style-iw').forEach(iw => {
+          document.querySelectorAll<HTMLElement>('.gm-style-iw').forEach(iw => {
             iw.style.display = 'none';
           });
           infoWindow.open(map, marker);
@@ -139,7 +140,7 @@ export function GoogleMaps({ hospitals, onMarkerClick }: GoogleMapsProps) {
       ref={mapRef}
       style={{
         width: '100%',
-        height: '100%',
+        height: '400px',
         borderRadius: '12px',
         overflow: 'hidden',
       }}

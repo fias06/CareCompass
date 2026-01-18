@@ -29,16 +29,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <NextChatSDKBootstrap baseUrl={baseURL} />
-        <Script 
-          src="https://athenachat.bot/chatbot/widget/carecompass4577"
-          strategy="lazyOnload"
-        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
         <AthenaChatbot />
+        <Script 
+          src="https://athenachat.bot/chatbot/widget/carecompass4577"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

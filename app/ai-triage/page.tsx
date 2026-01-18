@@ -62,9 +62,9 @@ export default function AITriagePage() {
       let urgency = 'Low';
       let response = '';
 
-      // Basic symptom scoring
-      const emergencyKeywords = ['chest pain', 'heart attack', 'stroke', 'seizure', 'unconscious', 'bleeding heavily', 'trouble breathing', 'severe'];
-      const urgentKeywords = ['severe pain', 'high fever', 'vomiting', 'dizziness', 'shortness of breath', 'broken'];
+      // Basic symptom scoring - Enhanced emergency detection
+      const emergencyKeywords = ['chest pain', 'heart attack', 'stroke', 'seizure', 'unconscious', 'bleeding heavily', 'trouble breathing', 'severe', 'stabbed', 'shot', 'bear', 'attacked', 'trauma', 'crushed', 'poisoned', 'overdose', 'choking', 'drowning', 'severe bleeding', 'broken bone', 'can\'t breathe', 'suicide', 'unresponsive'];
+      const urgentKeywords = ['severe pain', 'high fever', 'vomiting', 'dizziness', 'shortness of breath', 'broken', 'allergic reaction', 'difficulty breathing', 'fainting', 'heavy bleeding'];
       const moderateKeywords = ['pain', 'fever', 'cough', 'headache', 'nausea', 'fatigue'];
 
       if (emergencyKeywords.some(keyword => symptoms.includes(keyword))) {

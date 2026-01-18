@@ -24,3 +24,26 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Athena AI Chatbot Widget Styling */
+[data-chatbot-widget] {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+/* Ensure chatbot iframe doesn't interfere with page content */
+.athena-chatbot-frame,
+#athena-chat-frame,
+[class*="chatbot"] {
+  z-index: 9999 !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  [data-chatbot-widget] {
+    bottom: 15px;
+    right: 15px;
+  }
+}

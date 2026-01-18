@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { GoogleMaps } from '../components/google-maps';
 
 interface Hospital {
   id: string;
@@ -256,11 +257,11 @@ function TriageResultsContent() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-4 gap-8">
           {/* Left - Hospital List */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Recommended Hospitals</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Recommended Facilities</h3>
               
               <div className="space-y-4">
                 {hospitals.map((hospital) => (
@@ -319,6 +320,20 @@ function TriageResultsContent() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Center - Map */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-lg p-6 h-full" style={{ minHeight: '500px' }}>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Nearby Facilities</h3>
+              <GoogleMaps 
+                hospitals={hospitals}
+                onMarkerClick={(hospitalId) => {
+                  const hospital = hospitals.find(h => h.id === hospitalId);
+                  if (hospital) setSelectedHospital(hospital);
+                }}
+              />
             </div>
           </div>
 

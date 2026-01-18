@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { baseURL } from "@/baseUrl";
+import { AthenaChatbot } from "./components/athena-chatbot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,17 +29,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <NextChatSDKBootstrap baseUrl={baseURL} />
-        {/* Athena AI Chatbot Widget */}
         <Script 
-          src="https://athenachat.bot/chatbot/widget/carecompass4577" 
-          strategy="afterInteractive"
-          async
+          src="https://athenachat.bot/chatbot/widget/carecompass4577"
+          strategy="lazyOnload"
         />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <AthenaChatbot />
       </body>
     </html>
   );

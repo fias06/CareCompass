@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { elevenLabsVoice } from '../lib/elevenlabs';
+import { GoogleMaps } from '../components/google-maps';
 
 interface Hospital {
   id: string;

@@ -1,8 +1,17 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to AI triage on page load
+    router.push("/ai-triage");
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Navigation */}

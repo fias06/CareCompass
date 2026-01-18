@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { baseURL } from "@/baseUrl";
 import { AthenaChatbot } from "./components/athena-chatbot";
@@ -35,10 +34,7 @@ export default function RootLayout({
       >
         {children}
         <AthenaChatbot />
-        <Script 
-          src="https://athenachat.bot/chatbot/widget/carecompass4577"
-          strategy="afterInteractive"
-        />
+
       </body>
     </html>
   );

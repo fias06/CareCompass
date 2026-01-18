@@ -3,16 +3,48 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const QUICK_SYMPTOMS = [
+  { label: '🤒 Fever', value: 'fever' },
+  { label: '🤢 Nausea', value: 'nausea' },
+  { label: '🤕 Headache', value: 'headache' },
+  { label: '😷 Cough', value: 'cough' },
+  { label: '🫀 Chest Pain', value: 'chest pain' },
+  { label: '😵 Dizziness', value: 'dizziness' },
+  { label: '🤐 Sore Throat', value: 'sore throat' },
+  { label: '😴 Fatigue', value: 'fatigue' },
+  { label: '🫘 Stomach Ache', value: 'stomach ache' },
+  { label: '😤 Shortness of Breath', value: 'shortness of breath' },
+  { label: '🩹 Wound/Bleeding', value: 'bleeding' },
+  { label: '🧊 Fever High (>103°F)', value: 'high fever' },
+];
+
 export default function AITriagePage() {
   const router = useRouter();
   const [score, setScore] = useState<number | null>(null);
   const [messageReceived, setMessageReceived] = useState(false);
   const [displayText, setDisplayText] = useState('');
   const [userInput, setUserInput] = useState('');
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([
-    { role: 'assistant', content: 'Hello! I\'m CareCompass AI. Please describe your symptoms or how you\'re feeling, and I\'ll help assess your medical urgency.' }
+    { role: 'assistant', content: 'Hello! I\'m CareCompass AI. Please describe your symptoms or how you\'re feeling, and I\'ll help assess your medical urgency. You can click the symptom buttons below for quick selection!' }
   ]);
   const [loading, setLoading] = useState(false);
+
+  const toggleSymptom = (symptom: string) => {
+    setSelectedSymptoms(prev => 
+      prev.includes(symptom) 
+        ? prev.filter(s => s !== symptom)
+        : [...prev, symptom]
+    );
+  };
+
+  const handleQuickSymptomSelect = (symptomValue: string) => {
+    toggleSymptom(symptomValue);
+    const newInput = userInput || '';
+    if (!userInput.includes(symptomValue)) {
+      setUserInput(newInput + (newInput ? ', ' : '') + symptomValue);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!userInput.trim() || loading) return;
@@ -158,19 +190,19 @@ export default function AITriagePage() {
 
           {/* Right - Chatbot */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col h-[600px]">
+            <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col h-[750px]">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Chat with AI Assistant</h2>
               
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto mb-6 space-y-4 pr-4">
                 {messages.map((msg, idx) => (
                   <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+                    <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg text-sm leading-relaxed ${
                       msg.role === 'user'
-                        ? 'bg-blue-500 text-white rounded-br-none'
+                        ? 'bg-blue-500 text-white rounded-br-none font-medium'
                         : msg.role === 'system'
-                        ? 'bg-green-100 text-green-800 font-bold rounded-bl-none'
-                        : 'bg-gray-100 text-gray-900 rounded-bl-none'
+                        ? 'bg-green-100 text-green-900 font-bold rounded-bl-none'
+                        : 'bg-gray-100 text-black rounded-bl-none font-medium'
                     }`}>
                       {msg.content}
                     </div>
@@ -178,7 +210,7 @@ export default function AITriagePage() {
                 ))}
                 {loading && (
                   <div className="flex justify-start">
-                    <div className="bg-gray-100 text-gray-900 px-4 py-3 rounded-lg rounded-bl-none">
+                    <div className="bg-gray-100 text-black px-4 py-3 rounded-lg rounded-bl-none font-medium">
                       <div className="flex gap-2">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -191,9 +223,31 @@ export default function AITriagePage() {
 
               {messageReceived && score && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg animate-pulse">
-                  <p className="text-green-800">
+                  <p className="text-green-800 font-semibold">
                     ✓ Score: <strong>{score}/5</strong> - {displayText} Redirecting...
                   </p>
+                </div>
+              )}
+
+              {/* Quick Symptom Buttons */}
+              {!messageReceived && (
+                <div className="mb-6">
+                  <p className="text-sm font-semibold text-gray-900 mb-3">Quick Select Symptoms:</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {QUICK_SYMPTOMS.map((symptom) => (
+                      <button
+                        key={symptom.value}
+                        onClick={() => handleQuickSymptomSelect(symptom.value)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          selectedSymptoms.includes(symptom.value)
+                            ? 'bg-blue-600 text-white shadow-md scale-105'
+                            : 'bg-gray-200 text-black hover:bg-gray-300'
+                        }`}
+                      >
+                        {symptom.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -205,20 +259,20 @@ export default function AITriagePage() {
                   onChange={(e) => setUserInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder="Describe your symptoms..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-black placeholder-gray-500 font-medium text-sm"
                   disabled={loading || messageReceived}
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={!userInput.trim() || loading || messageReceived}
-                  className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all shadow-md hover:shadow-lg"
                 >
                   {loading ? 'Analyzing...' : 'Send'}
                 </button>
               </div>
 
-              <div className="text-sm text-gray-500 text-center mt-3">
-                Describe your symptoms and press Enter or click Send
+              <div className="text-xs text-gray-600 text-center mt-3 font-medium">
+                Click symptoms above or type to describe your symptoms, then press Enter or click Send
               </div>
             </div>
           </div>
